@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "581669635479",
+    "project_id": "homestay-b5e53",
+    "storage_bucket": "homestay-b5e53.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:581669635479:android:bc1cfe65f1d644f60630d2",
+        "android_client_info": {
+          "package_name": "com.example.baitap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB15TC0mz_o9Lbkg60wcCc-vvtasg8eLNc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:581669635479:android:e872a560e2c7fbdf0630d2",
+        "android_client_info": {
+          "package_name": "com.example.bookinghomestay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB15TC0mz_o9Lbkg60wcCc-vvtasg8eLNc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
