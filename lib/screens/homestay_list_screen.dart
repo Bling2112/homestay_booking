@@ -3,6 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/homestay.dart';
 import 'homestay_detail_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'login_screen.dart';
+import 'profile_screen.dart';
+import 'my_bookings_screen.dart';
 
 class HomestayListScreen extends StatefulWidget {
   const HomestayListScreen({super.key});
@@ -44,7 +48,53 @@ class _HomestayListScreenState extends State<HomestayListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Danh sách Homestay')),
+      appBar: AppBar(
+  title: const Text('Danh sách Homestay'),
+  actions: [
+    PopupMenuButton<String>(
+      onSelected: (value) {
+        if (value == 'profile') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ProfileScreen()),
+          );
+        } else if (value == 'bookings') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const MyBookingsScreen()),
+          );
+        } else if (value == 'logout') {
+          // ✅ Dùng Future.microtask để gọi async code đúng cách
+          Future.microtask(() async {
+            await FirebaseAuth.instance.signOut();
+            if (context.mounted) {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
+            }
+          });
+        }
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'profile',
+          child: Text('👤 Thông tin cá nhân'),
+        ),
+        const PopupMenuItem(
+          value: 'bookings',
+          child: Text('📖 Homestay đã đặt'),
+        ),
+        const PopupMenuItem(
+          value: 'logout',
+          child: Text('🚪 Đăng xuất'),
+        ),
+      ],
+    ),
+  ],
+),
+
       body: Column(
         children: [
           // 🔍 Thanh tìm kiếm

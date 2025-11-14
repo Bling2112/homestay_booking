@@ -87,8 +87,8 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color.fromARGB(255, 169, 242, 230),
-              Color.fromARGB(255, 178, 242, 237)
+              Color.fromARGB(255, 159, 236, 224),
+              Color.fromARGB(255, 129, 213, 206)
             ], // xanh ngọc nhẹ
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
