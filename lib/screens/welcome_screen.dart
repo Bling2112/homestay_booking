@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'homestay_list_screen.dart';
-import 'dart:math';
+import 'admin_homestay_list_screen.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -13,7 +13,8 @@ class WelcomeScreen extends StatefulWidget {
 
 class _WelcomeScreenState extends State<WelcomeScreen>
     with SingleTickerProviderStateMixin {
-  String? userName;
+  String userName = 'Người dùng';
+  String userRole = 'user';
   bool _isLoading = true;
 
   late final AnimationController _controller;
@@ -24,7 +25,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     super.initState();
     _fetchUserData();
 
-    // Khởi tạo animation lắc tay
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -33,33 +33,41 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     _rotationAnimation = Tween<double>(begin: -0.2, end: 0.2)
         .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
-    _controller.repeat(reverse: true); // lặp vô hạn
+    _controller.repeat(reverse: true);
+  }
+
+  Future<void> _fetchUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      final data = doc.data();
+      setState(() {
+        userName = data?['name'] ?? 'Người dùng';
+        userRole = data?['role'] ?? 'user';
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        userName = 'Người dùng';
+        userRole = 'user';
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
-  }
-
-  Future<void> _fetchUserData() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    try {
-      final doc =
-          await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-
-      setState(() {
-        userName = (doc.exists && doc['name'] != null) ? doc['name'] : 'Người dùng';
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        userName = 'Người dùng';
-        _isLoading = false;
-      });
-    }
   }
 
   @override
@@ -76,7 +84,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // 🖐️ Ảnh vẫy tay với animation
                       SizedBox(
                         width: 150,
                         height: 150,
@@ -92,9 +99,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         ),
                       ),
                       const SizedBox(height: 20),
-
-                      // 👋 Chào mừng
-                      Text('Xin chào,',
+                      Text(
+                        'Xin chào,',
                         style: TextStyle(
                           fontSize: 28,
                           color: Colors.teal[700],
@@ -103,7 +109,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        userName ?? 'Người dùng',
+                        userName,
                         style: TextStyle(
                           fontSize: 30,
                           color: Colors.teal[900],
@@ -111,7 +117,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         ),
                       ),
                       const SizedBox(height: 50),
-
                       ElevatedButton.icon(
                         icon: const Icon(Icons.arrow_forward_ios,
                             color: Colors.white),
@@ -120,12 +125,23 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           style: TextStyle(fontSize: 18, color: Colors.white),
                         ),
                         onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const HomestayListScreen()),
-                          );
-                        },
+  Widget nextScreen;
+
+  switch (userRole.toLowerCase()) {
+    case 'admin':
+      nextScreen = const AdminHomestayListScreen();
+      break;
+    case 'user':
+    default:
+      nextScreen = const HomestayListScreen();
+  }
+
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(builder: (_) => nextScreen),
+  );
+},
+
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.teal,
                           padding: const EdgeInsets.symmetric(

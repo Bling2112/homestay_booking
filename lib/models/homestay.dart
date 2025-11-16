@@ -21,6 +21,7 @@ class Homestay {
     required this.rating,
     required this.kind,
     required this.address,
+    
   });
 
   factory Homestay.fromFirestore(String id, Map<String, dynamic>? data) {
@@ -36,6 +37,7 @@ class Homestay {
         rating: 0,
         kind: '',
         address: '',
+        
       );
     }
 
@@ -54,6 +56,7 @@ class Homestay {
           : int.tryParse(data['rating']?.toString() ?? '0') ?? 0,
       kind: data['kind']?.toString() ?? '',
       address: data['address']?.toString() ?? '',
+      
     );
   }
 }

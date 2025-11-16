@@ -25,13 +25,17 @@ class _AdminHomestayListScreenState extends State<AdminHomestayListScreen> {
   Future<void> deleteHomestay(String id) async {
     try {
       await FirebaseFirestore.instance.collection('homestays').doc(id).delete();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Xóa homestay thành công!')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Xóa homestay thành công!')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi xóa: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi xóa: $e')),
+        );
+      }
     }
   }
 
@@ -40,6 +44,7 @@ class _AdminHomestayListScreenState extends State<AdminHomestayListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Quản lý Homestay'),
+        backgroundColor: Colors.teal,
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -76,6 +81,7 @@ class _AdminHomestayListScreenState extends State<AdminHomestayListScreen> {
                     : null,
                 filled: true,
                 fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -100,17 +106,21 @@ class _AdminHomestayListScreenState extends State<AdminHomestayListScreen> {
                 if (snapshot.hasError) {
                   return Center(child: Text('Lỗi: ${snapshot.error}'));
                 }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                final data = snapshot.data ?? [];
+                if (data.isEmpty) {
                   return const Center(child: Text('Chưa có homestay nào.'));
                 }
 
                 // Lọc theo từ khóa
-                final filtered = snapshot.data!.where((hs) {
+                final filtered = data.where((hs) {
                   final name = hs.name.toLowerCase();
                   final address = hs.address.toLowerCase();
-                  return name.contains(_searchKeyword) ||
-                      address.contains(_searchKeyword);
+                  return name.contains(_searchKeyword) || address.contains(_searchKeyword);
                 }).toList();
+
+                if (filtered.isEmpty) {
+                  return const Center(child: Text('Không tìm thấy homestay nào.'));
+                }
 
                 return ListView.builder(
                   itemCount: filtered.length,
@@ -118,13 +128,12 @@ class _AdminHomestayListScreenState extends State<AdminHomestayListScreen> {
                     final hs = filtered[index];
                     return Card(
                       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       elevation: 3,
                       child: ListTile(
+                        contentPadding: const EdgeInsets.all(12),
                         leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                           child: Image.network(
                             hs.imageUrl,
                             width: 80,
@@ -134,9 +143,10 @@ class _AdminHomestayListScreenState extends State<AdminHomestayListScreen> {
                                 const Icon(Icons.image_not_supported, size: 40),
                           ),
                         ),
-                        title: Text(hs.name,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
+                        title: Text(
+                          hs.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
                         subtitle: Text(hs.address),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -144,13 +154,12 @@ class _AdminHomestayListScreenState extends State<AdminHomestayListScreen> {
                             // ✏️ Nút sửa
                             IconButton(
                               icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                              tooltip: 'Sửa Homestay',
                               onPressed: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => AddOrEditHomestayScreen(
-                                      homestay: hs,
-                                    ),
+                                    builder: (_) => AddOrEditHomestayScreen(homestay: hs),
                                   ),
                                 );
                               },
@@ -158,12 +167,14 @@ class _AdminHomestayListScreenState extends State<AdminHomestayListScreen> {
                             // 🗑️ Nút xóa
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.redAccent),
+                              tooltip: 'Xóa Homestay',
                               onPressed: () {
                                 showDialog(
                                   context: context,
                                   builder: (_) => AlertDialog(
                                     title: const Text('Xác nhận xóa'),
-                                    content: Text('Bạn có chắc muốn xóa "${hs.name}" không?'),
+                                    content:
+                                        Text('Bạn có chắc muốn xóa "${hs.name}" không?'),
                                     actions: [
                                       TextButton(
                                         onPressed: () => Navigator.pop(context),
