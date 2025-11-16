@@ -80,6 +80,36 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = false); // <-- Bổ sung tắt loading
     }
   }
+
+  Future<void> _forgotPassword() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập email trước.')),
+      );
+      return;
+    }
+
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Email đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra hộp thư.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message = 'Lỗi không xác định';
+      if (e.code == 'user-not-found') {
+        message = 'Email không tồn tại trong hệ thống.';
+      } else if (e.code == 'invalid-email') {
+        message = 'Email không hợp lệ.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: $message')),
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -166,6 +196,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: _loginWithEmail,
                         child: const Text("Đăng nhập"),
                       ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: _forgotPassword,
+                child: const Text(
+                  "Quên mật khẩu?",
+                  style: TextStyle(color: Colors.teal),
+                ),
+              ),
               const SizedBox(height: 16),
               const SizedBox(height: 16), TextButton( onPressed: () => Navigator.push( context, MaterialPageRoute(builder: (_) => const RegisterScreen()), ),child: const Text("Chưa có tài khoản? Đăng ký"), ),
               const SizedBox(height: 12),

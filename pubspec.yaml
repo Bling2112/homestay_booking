@@ -24,8 +24,9 @@ dependencies:
   flutter_facebook_auth: ^7.1.1
 
   # Các thư viện tiện ích khác
-  
+
   url_launcher: ^6.3.2
+  carousel_slider: ^5.0.0
 
   # Hiệu ứng hoạt hình Lottie
   lottie: ^3.1.2

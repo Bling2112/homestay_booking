@@ -126,10 +126,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final checkOut = _extractDate(widget.bookingMeta?['checkOutDate']);
     if (checkOut == null || checkOut.isAfter(DateTime.now())) return; // Chỉ cho phép đánh giá sau khi checkout
 
-    int? rating = await showDialog<int>(
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) {
         int selectedRating = 0;
+        final commentController = TextEditingController();
         return AlertDialog(
           title: const Text('Đánh giá homestay'),
           content: StatefulBuilder(
@@ -156,6 +157,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       );
                     }),
                   ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: commentController,
+                    decoration: const InputDecoration(
+                      labelText: 'Nhận xét (tùy chọn)',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                  ),
                 ],
               );
             },
@@ -166,7 +176,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
               child: const Text('Bỏ qua'),
             ),
             TextButton(
-              onPressed: () => Navigator.pop(context, selectedRating),
+              onPressed: () => Navigator.pop(context, {
+                'rating': selectedRating,
+                'comment': commentController.text.trim(),
+              }),
               child: const Text('Gửi đánh giá'),
             ),
           ],
@@ -174,13 +187,43 @@ class _PaymentScreenState extends State<PaymentScreen> {
       },
     );
 
-    if (rating != null && rating > 0) {
-      // Cập nhật rating trong Firestore
-      final homestayRef = FirebaseFirestore.instance.collection('homestays').doc(widget.homestay.id);
-      final homestayDoc = await homestayRef.get();
-      final currentRating = homestayDoc.data()?['rating'] ?? 0;
-      final newRating = ((currentRating + rating) / 2).round(); // Trung bình đơn giản
-      await homestayRef.update({'rating': newRating});
+    if (result != null && result['rating'] > 0) {
+      final rating = result['rating'] as int;
+      final comment = result['comment'] as String;
+
+      // Lưu review vào subcollection
+      await FirebaseFirestore.instance
+          .collection('homestays')
+          .doc(widget.homestay.id)
+          .collection('reviews')
+          .add({
+            'userId': user.uid,
+            'userName': user.displayName ?? 'Khách',
+            'rating': rating,
+            'comment': comment,
+            'createdAt': DateTime.now(),
+          });
+
+      // Tính lại rating trung bình
+      final reviewsSnapshot = await FirebaseFirestore.instance
+          .collection('homestays')
+          .doc(widget.homestay.id)
+          .collection('reviews')
+          .get();
+
+      double totalRating = 0;
+      for (var doc in reviewsSnapshot.docs) {
+        totalRating += (doc.data()['rating'] as int).toDouble();
+      }
+      final averageRating = reviewsSnapshot.docs.isNotEmpty
+          ? (totalRating / reviewsSnapshot.docs.length).round()
+          : 0;
+
+      // Cập nhật rating trong homestay
+      await FirebaseFirestore.instance
+          .collection('homestays')
+          .doc(widget.homestay.id)
+          .update({'rating': averageRating});
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Cảm ơn bạn đã đánh giá $rating sao!')),

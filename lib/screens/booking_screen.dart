@@ -113,7 +113,10 @@ class _BookingScreenState extends State<BookingScreen> {
     }
 
     int nights = _checkOutDate!.difference(_checkInDate!).inDays;
-    int totalPrice = nights * widget.homestay.price;
+    int basePrice = nights * widget.homestay.price;
+    int extraGuests = _guestCount > widget.homestay.maxGuests ? _guestCount - widget.homestay.maxGuests : 0;
+    int extraFee = extraGuests * widget.homestay.extraGuestFee * nights;
+    int totalPrice = basePrice + extraFee;
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
@@ -213,7 +216,7 @@ class _BookingScreenState extends State<BookingScreen> {
             const SizedBox(height: 10),
             Row(
               children: [
-                const Text('Số khách: '),
+                Text('Số khách (tối đa ${homestay.maxGuests}): '),
                 IconButton(
                   onPressed: () {
                     if (_guestCount > 1) setState(() => _guestCount--);
@@ -227,6 +230,14 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
               ],
             ),
+            if (_guestCount > homestay.maxGuests)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'Phụ thu cho ${_guestCount - homestay.maxGuests} khách thêm: ${(_guestCount - homestay.maxGuests) * homestay.extraGuestFee * (_checkOutDate != null && _checkInDate != null ? _checkOutDate!.difference(_checkInDate!).inDays : 0)} đ',
+                  style: const TextStyle(color: Colors.red, fontSize: 14),
+                ),
+              ),
             const SizedBox(height: 10),
             TextField(
               controller: _noteController,

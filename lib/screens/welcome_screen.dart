@@ -34,6 +34,13 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     _controller.repeat(reverse: true);
+
+    // Auto navigate after 4 seconds
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted && !_isLoading) {
+        _navigateToNextScreen();
+      }
+    });
   }
 
   Future<void> _fetchUserData() async {
@@ -64,6 +71,24 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     }
   }
 
+  void _navigateToNextScreen() {
+    Widget nextScreen;
+
+    switch (userRole.toLowerCase()) {
+      case 'admin':
+        nextScreen = const AdminHomestayListScreen();
+        break;
+      case 'user':
+      default:
+        nextScreen = const HomestayListScreen();
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => nextScreen),
+    );
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -85,8 +110,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       SizedBox(
-                        width: 150,
-                        height: 150,
+                        width: 200,
+                        height: 200,
                         child: AnimatedBuilder(
                           animation: _rotationAnimation,
                           builder: (context, child) {
@@ -116,41 +141,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 50),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.arrow_forward_ios,
-                            color: Colors.white),
-                        label: const Text(
-                          "Tiếp tục",
-                          style: TextStyle(fontSize: 18, color: Colors.white),
-                        ),
-                        onPressed: () {
-  Widget nextScreen;
 
-  switch (userRole.toLowerCase()) {
-    case 'admin':
-      nextScreen = const AdminHomestayListScreen();
-      break;
-    case 'user':
-    default:
-      nextScreen = const HomestayListScreen();
-  }
-
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(builder: (_) => nextScreen),
-  );
-},
-
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 40, vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),

@@ -4,11 +4,13 @@ class Homestay {
   final String location;
   final String description;
   final List<String> facilities;
-  final String imageUrl;
+  final List<String> imageUrls;
   final int price;
   final int rating;
   final String kind;
   final String address;
+  final int maxGuests;
+  final int extraGuestFee;
 
   Homestay({
     required this.id,
@@ -16,13 +18,18 @@ class Homestay {
     required this.location,
     required this.description,
     required this.facilities,
-    required this.imageUrl,
+    required this.imageUrls,
     required this.price,
     required this.rating,
     required this.kind,
     required this.address,
-    
+    required this.maxGuests,
+    required this.extraGuestFee,
+
   });
+
+  // Getter for backward compatibility
+  String get imageUrl => imageUrls.isNotEmpty ? imageUrls.first : '';
 
   factory Homestay.fromFirestore(String id, Map<String, dynamic>? data) {
     if (data == null) {
@@ -32,12 +39,14 @@ class Homestay {
         location: '',
         description: '',
         facilities: [],
-        imageUrl: '',
+        imageUrls: [],
         price: 0,
         rating: 0,
         kind: '',
         address: '',
-        
+        maxGuests: 2,
+        extraGuestFee: 100000,
+
       );
     }
 
@@ -47,7 +56,7 @@ class Homestay {
       location: data['rental']?.toString() ?? '',
       description: data['description']?.toString() ?? '',
       facilities: List<String>.from(data['facilities'] ?? []),
-      imageUrl: data['imageUrl']?.toString() ?? '',
+      imageUrls: List<String>.from(data['imageUrls'] ?? [data['imageUrl']?.toString() ?? '']),
       price: (data['price'] is int)
           ? data['price']
           : int.tryParse(data['price']?.toString() ?? '0') ?? 0,
@@ -56,7 +65,13 @@ class Homestay {
           : int.tryParse(data['rating']?.toString() ?? '0') ?? 0,
       kind: data['kind']?.toString() ?? '',
       address: data['address']?.toString() ?? '',
-      
+      maxGuests: (data['maxGuests'] is int)
+          ? data['maxGuests']
+          : int.tryParse(data['maxGuests']?.toString() ?? '2') ?? 2,
+      extraGuestFee: (data['extraGuestFee'] is int)
+          ? data['extraGuestFee']
+          : int.tryParse(data['extraGuestFee']?.toString() ?? '100000') ?? 100000,
+
     );
   }
 }
