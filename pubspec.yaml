@@ -30,7 +30,7 @@ dependencies:
   # Hiệu ứng hoạt hình Lottie
   lottie: ^3.1.2
   qr_flutter: ^4.1.0
-  fl_chart: ^0.60.0
+  fl_chart: ^0.66.0
 
   http: ^1.2.0
 

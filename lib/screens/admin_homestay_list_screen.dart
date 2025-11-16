@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/homestay.dart';
 import 'add_edit_homestay_screen.dart';
+import 'admin_booking.dart';
+import 'profile_screen.dart';
+import 'login_screen.dart';
+import 'homestay_detail_screen.dart';
 
 class AdminHomestayListScreen extends StatefulWidget {
   const AdminHomestayListScreen({super.key});
@@ -46,6 +51,46 @@ class _AdminHomestayListScreenState extends State<AdminHomestayListScreen> {
         title: const Text('Quản lý Homestay'),
         backgroundColor: Colors.teal,
         actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              switch (value) {
+                case 'booking':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdminBookingManager()),
+                  );
+                  break;
+                case 'profile':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                  );
+                  break;
+                case 'logout':
+                  FirebaseAuth.instance.signOut();
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'booking',
+                child: Text('📋 Quản lý đơn'),
+              ),
+              const PopupMenuItem(
+                value: 'profile',
+                child: Text('👤 Thông tin cá nhân'),
+              ),
+              const PopupMenuItem(
+                value: 'logout',
+                child: Text('🚪 Đăng xuất'),
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Thêm Homestay',
@@ -148,6 +193,14 @@ class _AdminHomestayListScreenState extends State<AdminHomestayListScreen> {
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                         subtitle: Text(hs.address),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => HomestayDetailScreen(homestay: hs, isAdmin: true),
+                            ),
+                          );
+                        },
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

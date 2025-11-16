@@ -30,17 +30,28 @@ class EmailService {
     }
   });
 
-  final response = await http.post(
-    Uri.parse(url),
-    headers: {
-      
-      "Content-Type": "application/json",
-    },
-    body: body,
-  );
-  print('EmailJS status: ${response.statusCode}');
-  print('EmailJS response: ${response.body}');
+  try {
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: body,
+    );
 
-  return response.statusCode == 200;
+    print('EmailJS status: ${response.statusCode}');
+    print('EmailJS response: ${response.body}');
+
+    if (response.statusCode == 200) {
+      print('Email sent successfully');
+      return true;
+    } else {
+      print('Failed to send email: ${response.statusCode} - ${response.body}');
+      return false;
+    }
+  } catch (e) {
+    print('Error sending email: $e');
+    return false;
+  }
 }
 }

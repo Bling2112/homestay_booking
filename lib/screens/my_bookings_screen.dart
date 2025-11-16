@@ -44,14 +44,20 @@ class MyBookingsScreen extends StatelessWidget {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .asyncMap((snapshot) async {
-      final bookings = <BookingWithHomestay>[];
+      final bookingsMap = <String, BookingWithHomestay>{}; // homestayId -> latest booking
 
       for (final doc in snapshot.docs) {
         final data = doc.data();
+        final homestayId = data['homestayId'] as String?;
+
+        if (homestayId == null) continue;
+
+        // Skip if we already have a booking for this homestay
+        if (bookingsMap.containsKey(homestayId)) continue;
 
         final hsDoc = await FirebaseFirestore.instance
             .collection('homestays')
-            .doc(data['homestayId'])
+            .doc(homestayId)
             .get();
 
         if (!hsDoc.exists) continue;
@@ -71,20 +77,28 @@ class MyBookingsScreen extends StatelessWidget {
           status = 'completed';
         }
 
-        bookings.add(
-          BookingWithHomestay(
-            bookingId: doc.id,
-            paymentStatus: data['paymentStatus'] ?? 'pending',
-            status: status,
-            totalPrice: data['totalPrice'] ?? 0,
-            homestay: Homestay.fromFirestore(hsDoc.id, hsDoc.data()!),
-            checkIn: checkIn,
-            checkOut: checkOut,
-          ),
+        // 🔥 Hiển thị dialog đánh giá nếu đã hoàn thành và chưa đánh giá
+        if (status == 'completed' && checkOut.isBefore(now)) {
+          // Kiểm tra xem đã đánh giá chưa (có thể thêm field 'rated' trong booking)
+          final hasRated = data['hasRated'] ?? false;
+          if (!hasRated) {
+            // Hiển thị dialog đánh giá ở đây hoặc trong UI
+            // Để đơn giản, chúng ta có thể thêm một nút đánh giá trong UI
+          }
+        }
+
+        bookingsMap[homestayId] = BookingWithHomestay(
+          bookingId: doc.id,
+          paymentStatus: data['paymentStatus'] ?? 'pending',
+          status: status,
+          totalPrice: data['totalPrice'] ?? 0,
+          homestay: Homestay.fromFirestore(hsDoc.id, hsDoc.data()!),
+          checkIn: checkIn,
+          checkOut: checkOut,
         );
       }
 
-      return bookings;
+      return bookingsMap.values.toList();
     });
   }
 
@@ -203,6 +217,79 @@ class MyBookingsScreen extends StatelessWidget {
                           style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red),
                           child: const Text('Hủy booking'),
+                        ),
+                      if (b.status == 'completed' && b.checkOut.isBefore(DateTime.now()))
+                        ElevatedButton(
+                          onPressed: () async {
+                            int? rating = await showDialog<int>(
+                              context: context,
+                              builder: (context) {
+                                int selectedRating = 0;
+                                return AlertDialog(
+                                  title: const Text('Đánh giá homestay'),
+                                  content: StatefulBuilder(
+                                    builder: (context, setState) {
+                                      return Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Text('Bạn đã trải nghiệm homestay này. Hãy đánh giá:'),
+                                          const SizedBox(height: 16),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: List.generate(5, (index) {
+                                              return IconButton(
+                                                icon: Icon(
+                                                  index < selectedRating ? Icons.star : Icons.star_border,
+                                                  color: Colors.orange,
+                                                  size: 32,
+                                                ),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    selectedRating = index + 1;
+                                                  });
+                                                },
+                                              );
+                                            }),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, null),
+                                      child: const Text('Bỏ qua'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, selectedRating),
+                                      child: const Text('Gửi đánh giá'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+
+                            if (rating != null && rating > 0) {
+                              // Cập nhật rating trong Firestore
+                              final homestayRef = FirebaseFirestore.instance.collection('homestays').doc(b.homestay.id);
+                              final homestayDoc = await homestayRef.get();
+                              final currentRating = homestayDoc.data()?['rating'] ?? 0;
+                              final newRating = ((currentRating + rating) / 2).round(); // Trung bình đơn giản
+                              await homestayRef.update({'rating': newRating});
+
+                              // Đánh dấu đã đánh giá
+                              await FirebaseFirestore.instance.collection('bookings').doc(b.bookingId).update({
+                                'hasRated': true,
+                              });
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Cảm ơn bạn đã đánh giá $rating sao!')),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange),
+                          child: const Text('Đánh giá'),
                         ),
                     ],
                   ),

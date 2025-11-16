@@ -71,6 +71,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return false;
     }
 
+    // Fetch user name from Firestore
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    final String userName = userDoc.data()?['name'] ?? user.displayName ?? 'Khách';
+
     final doc = await FirebaseFirestore.instance.collection('bookings').add({
       'homestayId': widget.homestay.id,
       'homestayName': widget.homestay.name,
@@ -81,9 +88,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
       'totalPrice': widget.totalPrice,
       'paymentMethod': _method,
       'paymentStatus': 'pending',
-      'status': _method == 'cash' ? 'confirmed' : 'pending',
+      'status': 'waiting',
       'userId': user.uid,
       'userEmail': user.email ?? '',
+      'userName': userName,
       'orderId': _orderId,
       'createdAt': DateTime.now(),
     });
@@ -108,6 +116,75 @@ class _PaymentScreenState extends State<PaymentScreen> {
       print('Email sent: $result');
     } catch (e) {
       print('Error sending email: $e');
+    }
+  }
+
+  Future<void> _rateHomestay() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final checkOut = _extractDate(widget.bookingMeta?['checkOutDate']);
+    if (checkOut == null || checkOut.isAfter(DateTime.now())) return; // Chỉ cho phép đánh giá sau khi checkout
+
+    int? rating = await showDialog<int>(
+      context: context,
+      builder: (context) {
+        int selectedRating = 0;
+        return AlertDialog(
+          title: const Text('Đánh giá homestay'),
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Bạn đã trải nghiệm homestay này. Hãy đánh giá:'),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < selectedRating ? Icons.star : Icons.star_border,
+                          color: Colors.orange,
+                          size: 32,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            selectedRating = index + 1;
+                          });
+                        },
+                      );
+                    }),
+                  ),
+                ],
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, null),
+              child: const Text('Bỏ qua'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, selectedRating),
+              child: const Text('Gửi đánh giá'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (rating != null && rating > 0) {
+      // Cập nhật rating trong Firestore
+      final homestayRef = FirebaseFirestore.instance.collection('homestays').doc(widget.homestay.id);
+      final homestayDoc = await homestayRef.get();
+      final currentRating = homestayDoc.data()?['rating'] ?? 0;
+      final newRating = ((currentRating + rating) / 2).round(); // Trung bình đơn giản
+      await homestayRef.update({'rating': newRating});
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Cảm ơn bạn đã đánh giá $rating sao!')),
+      );
     }
   }
 

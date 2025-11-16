@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/homestay.dart';
 import 'booking_screen.dart';
+import 'add_edit_homestay_screen.dart';
 
 class HomestayDetailScreen extends StatelessWidget {
   final Homestay homestay;
-  const HomestayDetailScreen({super.key, required this.homestay});
+  final bool isAdmin;
+  const HomestayDetailScreen({super.key, required this.homestay, this.isAdmin = false});
 
   Future<void> _openMap(String address) async {
     final encodedAddress = Uri.encodeComponent(address);
@@ -77,21 +80,90 @@ class HomestayDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // 🔘 Nút đặt homestay
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => BookingScreen(homestay: h),
+                  // 🔘 Nút đặt homestay hoặc chỉnh sửa (tùy theo role)
+                  if (!isAdmin)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BookingScreen(homestay: h),
+                            ),
+                          );
+                        },
+                        child: const Text('Đặt ngay'),
+                      ),
+                    )
+                  else
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => AddOrEditHomestayScreen(homestay: h),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.edit),
+                            label: const Text('Chỉnh sửa'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                            ),
                           ),
-                        );
-                      },
-                      child: const Text('Đặt ngay'),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  title: const Text('Xác nhận xóa'),
+                                  content: Text('Bạn có chắc muốn xóa "${h.name}" không?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, false),
+                                      child: const Text('Hủy'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, true),
+                                      child: const Text('Xóa'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true) {
+                                try {
+                                  await FirebaseFirestore.instance.collection('homestays').doc(h.id).delete();
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Xóa homestay thành công!')),
+                                    );
+                                    Navigator.pop(context);
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Lỗi khi xóa: $e')),
+                                    );
+                                  }
+                                }
+                              }
+                            },
+                            icon: const Icon(Icons.delete),
+                            label: const Text('Xóa'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
                 ],
               ),
             ),

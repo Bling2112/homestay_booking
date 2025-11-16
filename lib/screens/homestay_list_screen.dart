@@ -27,6 +27,7 @@ class _HomestayListScreenState extends State<HomestayListScreen> {
 
   String _userRole = 'user';
   String _userId = '';
+  bool _notificationsRead = false;
 
   @override
   void initState() {
@@ -99,6 +100,9 @@ class _HomestayListScreenState extends State<HomestayListScreen> {
                   IconButton(
                     icon: const Icon(Icons.notifications),
                     onPressed: () {
+                      setState(() {
+                        _notificationsRead = true;
+                      });
                       if (_userRole == 'admin') {
                         Navigator.push(
                           context,
@@ -113,7 +117,7 @@ class _HomestayListScreenState extends State<HomestayListScreen> {
                       }
                     },
                   ),
-                  if (count > 0)
+                  if (count > 0 && !_notificationsRead)
                     Positioned(
                       right: 8,
                       top: 8,
