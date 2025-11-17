@@ -1,8 +1,6 @@
 import 'package:bookinghomestay/screens/welcome_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'homestay_list_screen.dart';
 import 'register_screen.dart';
@@ -58,29 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Cần bổ sung _isLoading cho Google và Facebook tương tự _loginWithEmail
-  Future<void> _loginWithGoogle() async {
-    setState(() => _isLoading = true); // <-- Bổ sung loading
-    try {
-      final googleUser = await GoogleSignIn().signIn();
-      // ... (Phần logic còn lại)
-    } catch (e) {
-      // ... (Xử lý lỗi)
-    } finally {
-      setState(() => _isLoading = false); // <-- Bổ sung tắt loading
-    }
-  }
 
-  Future<void> _loginWithFacebook() async {
-    setState(() => _isLoading = true); // <-- Bổ sung loading
-    try {
-      // ... (Phần logic còn lại)
-    } catch (e) {
-      // ... (Xử lý lỗi)
-    } finally {
-      setState(() => _isLoading = false); // <-- Bổ sung tắt loading
-    }
-  }
 
   Future<void> _forgotPassword() async {
     final email = _emailController.text.trim();
@@ -210,21 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16),
               const SizedBox(height: 16), TextButton( onPressed: () => Navigator.push( context, MaterialPageRoute(builder: (_) => const RegisterScreen()), ),child: const Text("Chưa có tài khoản? Đăng ký"), ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: Image.asset('assets/images/google.png', height: 40),
-                    onPressed: _loginWithGoogle,
-                  ),
-                  const SizedBox(width: 20),
-                  IconButton(
-                    icon: Image.asset('assets/images/facebook.png', height: 40),
-                    onPressed: _loginWithFacebook,
-                  ),
-                ],
-              ),
+
             ],
           ),
         ),

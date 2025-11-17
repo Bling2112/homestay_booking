@@ -1,35 +1,44 @@
-# TODO: Implement Custom Password Reset Feature
+# TODO List for Homestay Booking App Enhancements
 
-## Step 1: Modify email_service.dart
-- Add a new method `sendPasswordResetEmail` to send custom password reset emails using EmailJS.
-- Update template parameters to include reset code and instructions.
+## Phase 1: Remove Google/Facebook Login
+- [x] Remove Google and Facebook login imports from login_screen.dart
+- [x] Remove _loginWithGoogle and _loginWithFacebook methods
+- [x] Remove Google and Facebook login buttons from UI
 
-## Step 2: Create forgot_password_screen.dart
-- Create a new screen for users to enter their email for password reset.
-- Include form validation and call the new reset logic.
+## Phase 2: Implement Favorites Functionality
+- [ ] Add favorites collection to Firestore (userId, homestayId, timestamp)
+- [ ] Update homestay card to show favorite status and toggle button
+- [ ] Create favorites screen/view
+- [ ] Add favorites to quick actions navigation
 
-## Step 3: Create reset_password_screen.dart
-- Create a new screen for users to enter the reset code and new password.
-- Validate the code against Firestore, update password, and delete the code.
+## Phase 3: Enhance Promotions
+- [ ] Add promotions collection to Firestore with discount codes, validity
+- [ ] Update promotion carousel with real data
+- [ ] Add promotion details modal/screen
+- [ ] Implement discount application in booking flow
 
-## Step 4: Update login_screen.dart
-- Modify the "Quên mật khẩu?" button to navigate to forgot_password_screen.dart instead of using Firebase's built-in method.
+## Phase 4: Add History Functionality
+- [ ] Create search history collection (userId, searchQuery, timestamp)
+- [ ] Create booking history view (enhance existing my_bookings_screen)
+- [ ] Add history tracking to search and booking actions
+- [ ] Add history to quick actions navigation
 
-## Step 5: Update main.dart
-- Add routes for the new screens.
+## Phase 5: Implement Quick Booking
+- [ ] Create quick booking modal with date picker
+- [ ] Add instant booking for available homestays
+- [ ] Integrate with existing booking flow
+- [ ] Add quick booking to quick actions
 
-## Step 6: Test the feature
-- Run the app and test the full flow: request reset, receive email, enter code, reset password.
-- Ensure error handling for invalid codes, expired codes, etc.
+## Phase 6: Add Sample Data
+- [ ] Add sample homestays with more variety
+- [ ] Add sample promotions and discount codes
+- [ ] Add sample user data for testing
+- [ ] Test all new features
 
-## Step 7: Handle Firestore security
-- Ensure Firestore rules allow reading/writing reset codes for authenticated users or public access as needed.
-
-## Completed Steps:
-- [x] Step 1: Modified email_service.dart to add sendPasswordResetEmail method (switched to Firebase built-in due to EmailJS limitations).
-- [x] Step 2: Created forgot_password_screen.dart with email input and reset code generation.
-- [x] Step 3: Created reset_password_screen.dart with code validation and password update (redirects to Firebase built-in).
-- [x] Step 4: Updated login_screen.dart to navigate to forgot_password_screen.dart.
-- [x] Step 5: Updated main.dart to import new screens.
-- [x] Step 6: Tested the feature - navigation works, Firebase email is sent.
-- [ ] Step 7: Handle Firestore security.
+## Phase 7: Testing and Bug Fixes
+- [ ] Test login without Google/Facebook
+- [ ] Test favorites functionality
+- [ ] Test promotions application
+- [ ] Test history tracking
+- [ ] Test quick booking
+- [ ] Fix any UI/UX issues
