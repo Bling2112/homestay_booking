@@ -15,7 +15,13 @@ class _AddOrEditHomestayScreenState extends State<AddOrEditHomestayScreen> {
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _priceController = TextEditingController();
-  final _imageUrlController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _facilitiesController = TextEditingController();
+  final _kindController = TextEditingController();
+  final _maxGuestsController = TextEditingController();
+  final _extraGuestFeeController = TextEditingController();
+  final List<TextEditingController> _imageUrlControllers = [];
   int _rating = 0;
 
   @override
@@ -25,20 +31,89 @@ class _AddOrEditHomestayScreenState extends State<AddOrEditHomestayScreen> {
       _nameController.text = widget.homestay!.name;
       _addressController.text = widget.homestay!.address;
       _priceController.text = widget.homestay!.price.toString();
-      _imageUrlController.text = widget.homestay!.imageUrl;
+      _locationController.text = widget.homestay!.location;
+      _descriptionController.text = widget.homestay!.description;
+      _facilitiesController.text = widget.homestay!.facilities.join(', ');
+      _kindController.text = widget.homestay!.kind;
+      _maxGuestsController.text = widget.homestay!.maxGuests.toString();
+      _extraGuestFeeController.text = widget.homestay!.extraGuestFee.toString();
       _rating = widget.homestay!.rating;
+
+      // Initialize image URL controllers
+      _imageUrlControllers.clear();
+      for (String url in widget.homestay!.imageUrls) {
+        if (url.isNotEmpty) {
+          _imageUrlControllers.add(TextEditingController(text: url));
+        }
+      }
+      // Add at least one empty controller if no images
+      if (_imageUrlControllers.isEmpty) {
+        _imageUrlControllers.add(TextEditingController());
+      }
+    } else {
+      // For new homestay, add one empty image URL controller
+      _imageUrlControllers.add(TextEditingController());
+    }
+  }
+
+  @override
+  void dispose() {
+    // Dispose all controllers
+    _nameController.dispose();
+    _addressController.dispose();
+    _priceController.dispose();
+    _locationController.dispose();
+    _descriptionController.dispose();
+    _facilitiesController.dispose();
+    _kindController.dispose();
+    _maxGuestsController.dispose();
+    _extraGuestFeeController.dispose();
+    for (var controller in _imageUrlControllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  void _addImageUrlField() {
+    setState(() {
+      _imageUrlControllers.add(TextEditingController());
+    });
+  }
+
+  void _removeImageUrlField(int index) {
+    if (_imageUrlControllers.length > 1) {
+      setState(() {
+        _imageUrlControllers[index].dispose();
+        _imageUrlControllers.removeAt(index);
+      });
     }
   }
 
   Future<void> saveHomestay() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Collect image URLs from controllers
+    final imageUrls = _imageUrlControllers
+        .map((controller) => controller.text.trim())
+        .where((url) => url.isNotEmpty)
+        .toList();
+
     final data = {
       'name': _nameController.text.trim(),
       'address': _addressController.text.trim(),
-      'price': double.tryParse(_priceController.text.trim()) ?? 0,
-      'imageUrl': _imageUrlController.text.trim(),
+      'location': _locationController.text.trim(),
+      'description': _descriptionController.text.trim(),
+      'facilities': _facilitiesController.text.trim().isEmpty
+          ? []
+          : _facilitiesController.text.trim().split(',').map((s) => s.trim()).toList(),
+      'imageUrls': imageUrls,
+      'price': int.tryParse(_priceController.text.trim()) ?? 0,
       'rating': _rating,
+      'kind': _kindController.text.trim(),
+      'maxGuests': int.tryParse(_maxGuestsController.text.trim()) ?? 2,
+      'extraGuestFee': int.tryParse(_extraGuestFeeController.text.trim()) ?? 100000,
+      // Keep imageUrl for backward compatibility
+      'imageUrl': imageUrls.isNotEmpty ? imageUrls.first : '',
     };
 
     final collection = FirebaseFirestore.instance.collection('homestays');
@@ -83,14 +158,66 @@ class _AddOrEditHomestayScreenState extends State<AddOrEditHomestayScreen> {
                 validator: (v) => v!.isEmpty ? 'Nhập địa chỉ' : null,
               ),
               TextFormField(
+                controller: _locationController,
+                decoration: const InputDecoration(labelText: 'Vị trí'),
+              ),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(labelText: 'Mô tả'),
+                maxLines: 3,
+              ),
+              TextFormField(
+                controller: _facilitiesController,
+                decoration: const InputDecoration(labelText: 'Tiện ích (cách nhau bằng dấu phẩy)'),
+              ),
+              TextFormField(
+                controller: _kindController,
+                decoration: const InputDecoration(labelText: 'Loại homestay'),
+              ),
+              TextFormField(
                 controller: _priceController,
                 decoration: const InputDecoration(labelText: 'Giá / đêm'),
                 keyboardType: TextInputType.number,
                 validator: (v) => v!.isEmpty ? 'Nhập giá' : null,
               ),
               TextFormField(
-                controller: _imageUrlController,
-                decoration: const InputDecoration(labelText: 'URL hình ảnh'),
+                controller: _maxGuestsController,
+                decoration: const InputDecoration(labelText: 'Số khách tối đa'),
+                keyboardType: TextInputType.number,
+              ),
+              TextFormField(
+                controller: _extraGuestFeeController,
+                decoration: const InputDecoration(labelText: 'Phí khách thêm'),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 16),
+              const Text('URL hình ảnh:', style: TextStyle(fontWeight: FontWeight.bold)),
+              ..._imageUrlControllers.asMap().entries.map((entry) {
+                int index = entry.key;
+                TextEditingController controller = entry.value;
+                return Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: controller,
+                        decoration: InputDecoration(
+                          labelText: 'URL hình ảnh ${index + 1}',
+                          hintText: 'https://example.com/image.jpg',
+                        ),
+                      ),
+                    ),
+                    if (_imageUrlControllers.length > 1)
+                      IconButton(
+                        icon: const Icon(Icons.remove_circle, color: Colors.red),
+                        onPressed: () => _removeImageUrlField(index),
+                      ),
+                  ],
+                );
+              }),
+              TextButton.icon(
+                icon: const Icon(Icons.add),
+                label: const Text('Thêm URL hình ảnh'),
+                onPressed: _addImageUrlField,
               ),
               const SizedBox(height: 16),
               Row(
