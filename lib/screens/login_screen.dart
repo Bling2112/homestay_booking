@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'homestay_list_screen.dart';
 import 'register_screen.dart';
 import 'welcome_screen.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -198,7 +199,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: _forgotPassword,
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                ),
                 child: const Text(
                   "Quên mật khẩu?",
                   style: TextStyle(color: Colors.teal),

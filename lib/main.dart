@@ -1,5 +1,7 @@
 import 'package:bookinghomestay/screens/login_screen.dart';
 import 'package:bookinghomestay/screens/welcome_screen.dart';
+import 'package:bookinghomestay/screens/forgot_password_screen.dart';
+import 'package:bookinghomestay/screens/reset_password_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -19,7 +21,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: false,    
       title: 'Booking Homestay',
       theme: ThemeData(primarySwatch: Colors.teal),
 

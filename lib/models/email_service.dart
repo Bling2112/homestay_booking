@@ -54,4 +54,8 @@ class EmailService {
     return false;
   }
 }
+
+  // Note: EmailJS doesn't work in non-browser applications.
+  // We'll use Firebase's built-in password reset instead.
+  // This method is kept for potential future use with a different email service.
 }
