@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/homestay.dart';
 import 'homestay_detail_screen.dart';
+import 'review_screen.dart';
 
 class BookingWithHomestay {
   final String bookingId;
@@ -12,6 +13,7 @@ class BookingWithHomestay {
   final Homestay homestay;
   final DateTime checkIn;
   final DateTime checkOut;
+  final bool hasRated;
 
   BookingWithHomestay({
     required this.bookingId,
@@ -21,6 +23,7 @@ class BookingWithHomestay {
     required this.homestay,
     required this.checkIn,
     required this.checkOut,
+    required this.hasRated,
   });
 }
 
@@ -77,15 +80,7 @@ class MyBookingsScreen extends StatelessWidget {
           status = 'completed';
         }
 
-        // 🔥 Hiển thị dialog đánh giá nếu đã hoàn thành và chưa đánh giá
-        if (status == 'completed' && checkOut.isBefore(now)) {
-          // Kiểm tra xem đã đánh giá chưa (có thể thêm field 'rated' trong booking)
-          final hasRated = data['hasRated'] ?? false;
-          if (!hasRated) {
-            // Hiển thị dialog đánh giá ở đây hoặc trong UI
-            // Để đơn giản, chúng ta có thể thêm một nút đánh giá trong UI
-          }
-        }
+        final hasRated = data['hasRated'] ?? false;
 
         bookingsMap[homestayId] = BookingWithHomestay(
           bookingId: doc.id,
@@ -95,6 +90,7 @@ class MyBookingsScreen extends StatelessWidget {
           homestay: Homestay.fromFirestore(hsDoc.id, hsDoc.data()!),
           checkIn: checkIn,
           checkOut: checkOut,
+          hasRated: hasRated,
         );
       }
 
@@ -218,117 +214,18 @@ class MyBookingsScreen extends StatelessWidget {
                               backgroundColor: Colors.red),
                           child: const Text('Hủy booking'),
                         ),
-                      if (b.status == 'completed' && b.checkOut.isBefore(DateTime.now()))
+                      if (b.status == 'completed' && !b.hasRated)
                         ElevatedButton(
-                          onPressed: () async {
-                            final result = await showDialog<Map<String, dynamic>>(
-                              context: context,
-                              builder: (context) {
-                                int selectedRating = 0;
-                                final commentController = TextEditingController();
-                                return AlertDialog(
-                                  title: const Text('Đánh giá homestay'),
-                                  content: StatefulBuilder(
-                                    builder: (context, setState) {
-                                      return Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Text('Bạn đã trải nghiệm homestay này. Hãy đánh giá:'),
-                                          const SizedBox(height: 16),
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: List.generate(5, (index) {
-                                              return IconButton(
-                                                icon: Icon(
-                                                  index < selectedRating ? Icons.star : Icons.star_border,
-                                                  color: Colors.orange,
-                                                  size: 32,
-                                                ),
-                                                onPressed: () {
-                                                  setState(() {
-                                                    selectedRating = index + 1;
-                                                  });
-                                                },
-                                              );
-                                            }),
-                                          ),
-                                          const SizedBox(height: 16),
-                                          TextField(
-                                            controller: commentController,
-                                            decoration: const InputDecoration(
-                                              labelText: 'Nhận xét (tùy chọn)',
-                                              border: OutlineInputBorder(),
-                                            ),
-                                            maxLines: 3,
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context, null),
-                                      child: const Text('Bỏ qua'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context, {
-                                        'rating': selectedRating,
-                                        'comment': commentController.text.trim(),
-                                      }),
-                                      child: const Text('Gửi đánh giá'),
-                                    ),
-                                  ],
-                                );
-                              },
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ReviewScreen(
+                                  homestay: b.homestay,
+                                  bookingId: b.bookingId,
+                                ),
+                              ),
                             );
-
-                            if (result != null && result['rating'] > 0) {
-                              final rating = result['rating'] as int;
-                              final comment = result['comment'] as String;
-
-                              // Lưu review vào subcollection
-                              await FirebaseFirestore.instance
-                                  .collection('homestays')
-                                  .doc(b.homestay.id)
-                                  .collection('reviews')
-                                  .add({
-                                    'userId': FirebaseAuth.instance.currentUser!.uid,
-                                    'userName': FirebaseAuth.instance.currentUser!.displayName ?? 'Khách',
-                                    'rating': rating,
-                                    'comment': comment,
-                                    'createdAt': DateTime.now(),
-                                  });
-
-                              // Tính lại rating trung bình
-                              final reviewsSnapshot = await FirebaseFirestore.instance
-                                  .collection('homestays')
-                                  .doc(b.homestay.id)
-                                  .collection('reviews')
-                                  .get();
-
-                              double totalRating = 0;
-                              for (var doc in reviewsSnapshot.docs) {
-                                totalRating += (doc.data()['rating'] as int).toDouble();
-                              }
-                              final averageRating = reviewsSnapshot.docs.isNotEmpty
-                                  ? (totalRating / reviewsSnapshot.docs.length).round()
-                                  : 0;
-
-                              // Cập nhật rating trong homestay
-                              await FirebaseFirestore.instance
-                                  .collection('homestays')
-                                  .doc(b.homestay.id)
-                                  .update({'rating': averageRating});
-
-                              // Đánh dấu đã đánh giá
-                              await FirebaseFirestore.instance.collection('bookings').doc(b.bookingId).update({
-                                'hasRated': true,
-                              });
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Cảm ơn bạn đã đánh giá $rating sao!')),
-                              );
-                            }
                           },
                           style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.orange),
