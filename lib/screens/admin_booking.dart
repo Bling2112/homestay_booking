@@ -4,6 +4,10 @@ import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/email_service.dart';
+import 'admin_dashboard.dart';
+import 'admin_homestay_list_screen.dart';
+import 'profile_screen.dart';
+import 'login_screen.dart';
 
 class AdminBookingManager extends StatefulWidget {
   const AdminBookingManager({super.key});
@@ -193,9 +197,19 @@ class _AdminBookingManagerState extends State<AdminBookingManager> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        backgroundColor: Colors.grey[50],
         appBar: AppBar(
-          title: const Text("Quản lý đặt phòng"),
+          title: const Text(
+            "📋 Quản lý đặt phòng",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          backgroundColor: Colors.teal,
+          elevation: 0,
           bottom: const TabBar(
+            indicatorColor: Colors.white,
             tabs: [
               Tab(text: 'Đơn đặt phòng'),
               Tab(text: 'Thống kê'),
@@ -213,7 +227,7 @@ class _AdminBookingManagerState extends State<AdminBookingManager> {
                 return Stack(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.notifications),
+                      icon: const Icon(Icons.notifications, color: Colors.white),
                       onPressed: () {
                         // Mark all pending bookings as read (optional)
                         // For now, just navigate or perform action
@@ -232,13 +246,85 @@ class _AdminBookingManagerState extends State<AdminBookingManager> {
                           child: Text(
                             count.toString(),
                             style: const TextStyle(
-                                color: Colors.white, fontSize: 12),
+                                color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                           ),
                         ),
                       )
                   ],
                 );
               },
+            ),
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                switch (value) {
+                  case 'dashboard':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AdminDashboard()),
+                    );
+                    break;
+                  case 'homestay':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AdminHomestayListScreen()),
+                    );
+                    break;
+                  case 'profile':
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                    );
+                    break;
+                  case 'logout':
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Xác nhận đăng xuất'),
+                        content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Hủy'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                            ),
+                            child: const Text('Đăng xuất'),
+                          ),
+                        ],
+                      ),
+                    ).then((shouldLogout) {
+                      if (shouldLogout == true) {
+                        FirebaseAuth.instance.signOut();
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                          (route) => false,
+                        );
+                      }
+                    });
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'dashboard',
+                  child: Text('📊 Dashboard'),
+                ),
+                const PopupMenuItem(
+                  value: 'homestay',
+                  child: Text('🏠 Quản lý Homestay'),
+                ),
+                const PopupMenuItem(
+                  value: 'profile',
+                  child: Text('👤 Thông tin cá nhân'),
+                ),
+                const PopupMenuItem(
+                  value: 'logout',
+                  child: Text('🚪 Đăng xuất'),
+                ),
+              ],
             ),
           ],
         ),
