@@ -1,3 +1,3 @@
 # bookinghomestay
 
-A new Flutter project.
+Ứng dụng đặt homestay
